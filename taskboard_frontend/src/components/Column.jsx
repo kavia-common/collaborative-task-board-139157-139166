@@ -2,6 +2,7 @@ import React from "react";
 import { Droppable, Draggable } from "react-beautiful-dnd";
 import TaskCard from "./TaskCard";
 import { oceanTheme } from "../theme";
+import { DndPortal } from "./DndPortal";
 
 /**
  * PUBLIC_INTERFACE
@@ -12,7 +13,9 @@ import { oceanTheme } from "../theme";
  * - tasks: task[]
  * - onEditTask: function(updatedTask)
  */
-export default function Column({ column, tasks, onEditTask }) {
+export default function Column({ column, tasks = [], onEditTask }) {
+  const colId = String(column?.id || "");
+
   return (
     <div style={{
       minWidth: 280,
@@ -25,8 +28,9 @@ export default function Column({ column, tasks, onEditTask }) {
       borderRadius: 16,
       padding: 12,
     }}>
-      <div style={{ fontWeight: 800, color: oceanTheme.colors.text }}>{column.title}</div>
-      <Droppable droppableId={column.id}>
+      <div style={{ fontWeight: 800, color: oceanTheme.colors.text }}>{column?.title || "Column"}</div>
+      {/* Ensure droppableId is a stable, non-empty string */}
+      <Droppable droppableId={colId}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
@@ -42,17 +46,21 @@ export default function Column({ column, tasks, onEditTask }) {
               transition: "background .15s ease"
             }}
           >
-            {(tasks || []).map((task, index) => (
-              <Draggable draggableId={String(task.id)} index={index} key={task.id}>
-                {(dragProvided) => (
-                  <div
-                    ref={dragProvided.innerRef}
-                    {...dragProvided.draggableProps}
-                    {...dragProvided.dragHandleProps}
-                  >
-                    <TaskCard task={task} onEdit={onEditTask} />
-                  </div>
-                )}
+            {tasks.map((task, index) => (
+              <Draggable draggableId={String(task.id)} index={index} key={String(task.id)}>
+                {(dragProvided, dragSnapshot) => {
+                  const content = (
+                    <div
+                      ref={dragProvided.innerRef}
+                      {...dragProvided.draggableProps}
+                      {...dragProvided.dragHandleProps}
+                    >
+                      <TaskCard task={task} onEdit={onEditTask} />
+                    </div>
+                  );
+                  // When dragging, render into a portal to improve stability and avoid clipping/z-index issues
+                  return dragSnapshot.isDragging ? <DndPortal>{content}</DndPortal> : content;
+                }}
               </Draggable>
             ))}
             {provided.placeholder}

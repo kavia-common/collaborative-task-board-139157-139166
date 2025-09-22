@@ -6,6 +6,12 @@ import { defaultColumns, columnOrderFromDefaults } from "../types";
 import { moveTask, subscribeTasks, upsertTask } from "../services/boardService";
 
 /**
+ * Note: React 18 StrictMode can double-invoke effects; ensure droppableIds are stable and consistent.
+ * Columns are defined in src/types.js and Column renders a Droppable with droppableId matching column.id.
+ * Draggables render through a portal for robust registration and layout across complex containers.
+ */
+
+/**
  * PUBLIC_INTERFACE
  * Board
  * Drag-and-drop task board with real-time syncing.
