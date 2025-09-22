@@ -3,7 +3,7 @@ import { DragDropContext } from "react-beautiful-dnd";
 import Column from "./Column";
 import { oceanTheme } from "../theme";
 import { defaultColumns, columnOrderFromDefaults } from "../types";
-import { moveTask, subscribeTasks } from "../services/boardService";
+import { moveTask, subscribeTasks, upsertTask } from "../services/boardService";
 
 /**
  * PUBLIC_INTERFACE
@@ -48,18 +48,19 @@ export default function Board({ boardId, tasks = [], onLocalMove }) {
   }, [localTasks]);
 
   const onDragEnd = useCallback(async (result) => {
-    const { destination, source, draggableId } = result;
-    if (!destination) return;
+    const { destination, source, draggableId } = result || {};
+    if (!destination || !source) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
 
     const taskId = draggableId;
-    const sourceTasks = Array.from(tasksByColumn[source.droppableId] || []);
-    const [moved] = sourceTasks.splice(source.index, 1);
+    const sourceList = Array.from(tasksByColumn[source.droppableId] || []);
+    const [moved] = sourceList.splice(source.index, 1);
+    if (!moved) return;
 
-    const destTasks = Array.from(tasksByColumn[destination.droppableId] || []);
-    destTasks.splice(destination.index, 0, moved);
+    // Insert into destination list (for future: compute positions based on neighbors if needed)
+    const destList = Array.from(tasksByColumn[destination.droppableId] || []);
+    destList.splice(destination.index, 0, moved);
 
-    // compute new position: use index as position for simplicity
     const newStatus = destination.droppableId;
     const newPosition = destination.index;
 
@@ -79,13 +80,26 @@ export default function Board({ boardId, tasks = [], onLocalMove }) {
 
   const columnOrder = useMemo(() => columnOrderFromDefaults(), []);
 
+  // PUBLIC_INTERFACE
+  const onEditTask = useCallback(async (updatedTask) => {
+    // Optimistic
+    setLocalTasks(prev => prev.map(t => t.id === updatedTask.id ? { ...t, ...updatedTask } : t));
+    onLocalMove && onLocalMove(updatedTask);
+    try {
+      await upsertTask(updatedTask);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to update task:", e);
+    }
+  }, [onLocalMove]);
+
   return (
     <div style={{ display: "flex", gap: 14, padding: 14, overflow: "auto" }}>
       <DragDropContext onDragEnd={onDragEnd}>
         {columnOrder.map((colId) => {
           const column = defaultColumns.find(c => c.id === colId);
           const colTasks = tasksByColumn[colId] || [];
-          return <Column key={colId} column={column} tasks={colTasks} />;
+          return <Column key={colId} column={column} tasks={colTasks} onEditTask={onEditTask} />;
         })}
       </DragDropContext>
       <div style={{

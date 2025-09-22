@@ -7,8 +7,12 @@ import { oceanTheme } from "../theme";
  * PUBLIC_INTERFACE
  * Column
  * A board column that accepts drag-and-drop tasks.
+ * Props:
+ * - column: { id, title }
+ * - tasks: task[]
+ * - onEditTask: function(updatedTask)
  */
-export default function Column({ column, tasks }) {
+export default function Column({ column, tasks, onEditTask }) {
   return (
     <div style={{
       minWidth: 280,
@@ -46,7 +50,7 @@ export default function Column({ column, tasks }) {
                     {...dragProvided.draggableProps}
                     {...dragProvided.dragHandleProps}
                   >
-                    <TaskCard task={task} />
+                    <TaskCard task={task} onEdit={onEditTask} />
                   </div>
                 )}
               </Draggable>
