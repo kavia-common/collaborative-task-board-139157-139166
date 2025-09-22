@@ -1,82 +1,56 @@
-# Lightweight React Template for KAVIA
+# Collaborative Task Board - Frontend
 
-This project provides a minimal React template with a clean, modern UI and minimal dependencies.
+Modern React app implementing a real-time collaborative task board with drag-and-drop, Supabase integration, and the Ocean Professional theme.
 
 ## Features
 
-- **Lightweight**: No heavy UI frameworks - uses only vanilla CSS and React
-- **Modern UI**: Clean, responsive design with KAVIA brand styling
-- **Fast**: Minimal dependencies for quick loading times
-- **Simple**: Easy to understand and modify
+- Drag-and-drop task board (react-beautiful-dnd)
+- Real-time collaboration via Supabase Realtime
+- Progress tracking across To Do / In Progress / Review / Done
+- Sidebar navigation for boards
+- Top bar for workspace actions
+- Right panel activity feed
+- Modern Ocean Professional theme (blue primary, amber accents, soft gradients)
+
+## Environment Variables
+
+Create a `.env` file at the project root (same folder as package.json) with:
+
+```
+REACT_APP_SUPABASE_URL=YOUR_SUPABASE_URL
+REACT_APP_SUPABASE_KEY=YOUR_SUPABASE_ANON_KEY
+```
+
+See `.env.example` for reference.
+
+Note: Do not commit secrets. These variables must be provided by the environment.
+
+## Supabase Schema (expected)
+
+Tables used by the frontend:
+
+- boards: { id: uuid, name: text, created_at: timestamptz }
+- tasks: { id: uuid, board_id: uuid, title: text, description: text, status: text, priority: text, position: int4, created_at: timestamptz, updated_at: timestamptz }
+- activity: { id: uuid, board_id: uuid, message: text, metadata: jsonb, created_at: timestamptz }
+
+Enable Realtime for tasks and activity tables.
 
 ## Getting Started
 
-In the project directory, you can run:
-
-### `npm start`
-
-Runs the app in development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
-
-### `npm test`
-
-Launches the test runner in interactive watch mode.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-## Customization
-
-### Colors
-
-The main brand colors are defined as CSS variables in `src/App.css`:
-
-```css
-:root {
-  --kavia-orange: #E87A41;
-  --kavia-dark: #1A1A1A;
-  --text-color: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.7);
-  --border-color: rgba(255, 255, 255, 0.1);
-}
+Install dependencies:
+```
+npm install
 ```
 
-### Components
+Run development server:
+```
+npm start
+```
 
-This template uses pure HTML/CSS components instead of a UI framework. You can find component styles in `src/App.css`. 
+Open http://localhost:3000 in your browser.
 
-Common components include:
-- Buttons (`.btn`, `.btn-large`)
-- Container (`.container`)
-- Navigation (`.navbar`)
-- Typography (`.title`, `.subtitle`, `.description`)
+## Notes
 
-## Learn More
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- Authentication: For demo purposes, the app attempts to use an existing Supabase session if available; you can integrate a proper login flow by replacing `signInAnonymously` in `src/lib/supabaseClient.js`.
+- Styling: Theme tokens are defined in `src/theme.js`. Components use inline styles for clarity.
+- Extensibility: Add more columns, comments on tasks, user presence, and board permissions as needed.
