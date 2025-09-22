@@ -1,0 +1,4 @@
+{
+    "command": "npm install",
+    "working_directory": "/home/kavia/workspace/code-generation/collaborative-task-board-139157-139166/taskboard_frontend"
+}
