@@ -25,6 +25,8 @@ See `.env.example` for reference.
 
 Note: Do not commit secrets. These variables must be provided by the environment.
 
+Important: Backend (Supabase) has been configured with tables: boards, tasks, activity; Realtime enabled; and demo-friendly RLS policies. See assets/supabase.md for full details and to harden policies for production use.
+
 ## Supabase Schema (expected)
 
 Tables used by the frontend:
