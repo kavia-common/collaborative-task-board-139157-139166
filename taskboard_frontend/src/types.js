@@ -5,6 +5,10 @@ export const defaultColumns = [
   { id: "done", title: "Done" }
 ];
 
+// Log once on module load to verify column ids are as expected.
+// eslint-disable-next-line no-console
+console.log("[types] defaultColumns loaded:", defaultColumns.map(c => c.id));
+
 export function createTask({ id, title, description = "", status = "todo", assignee = null, priority = "medium" }) {
   return {
     id,
@@ -19,5 +23,8 @@ export function createTask({ id, title, description = "", status = "todo", assig
 }
 
 export function columnOrderFromDefaults() {
-  return defaultColumns.map(c => c.id);
+  const order = defaultColumns.map(c => c.id);
+  // eslint-disable-next-line no-console
+  console.log("[types] columnOrderFromDefaults:", order);
+  return order;
 }

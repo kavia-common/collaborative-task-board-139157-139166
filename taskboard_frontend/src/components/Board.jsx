@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DragDropContext } from "react-beautiful-dnd";
 import Column from "./Column";
 import { oceanTheme } from "../theme";
@@ -9,6 +9,7 @@ import { moveTask, subscribeTasks, upsertTask } from "../services/boardService";
  * Note: React 18 StrictMode can double-invoke effects; ensure droppableIds are stable and consistent.
  * Columns are defined in src/types.js and Column renders a Droppable with droppableId matching column.id.
  * Draggables render through a portal for robust registration and layout across complex containers.
+ * This file includes extensive logging and guards to diagnose "Cannot find droppable entry with id [todo]" errors.
  */
 
 /**
@@ -18,6 +19,7 @@ import { moveTask, subscribeTasks, upsertTask } from "../services/boardService";
  */
 export default function Board({ boardId, tasks = [], onLocalMove }) {
   const [localTasks, setLocalTasks] = useState(tasks);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
     setLocalTasks(tasks);
@@ -39,6 +41,17 @@ export default function Board({ boardId, tasks = [], onLocalMove }) {
     return () => unsubscribe && unsubscribe();
   }, [boardId]);
 
+  useEffect(() => {
+    mountedRef.current = true;
+    // eslint-disable-next-line no-console
+    console.log("[Board] Mounted with boardId:", boardId);
+    return () => {
+      mountedRef.current = false;
+      // eslint-disable-next-line no-console
+      console.log("[Board] Unmounted");
+    };
+  }, [boardId]);
+
   const tasksByColumn = useMemo(() => {
     const grouped = {};
     for (const col of defaultColumns) grouped[col.id] = [];
@@ -53,10 +66,31 @@ export default function Board({ boardId, tasks = [], onLocalMove }) {
     return grouped;
   }, [localTasks]);
 
+  // Capture available droppableIds pre-render for diagnostics
+  const columnOrder = useMemo(() => columnOrderFromDefaults(), []);
+  const availableDroppableIds = useMemo(() => {
+    // Always include all default columns to ensure registration order is deterministic
+    return columnOrder.filter(Boolean);
+  }, [columnOrder]);
+
   const onDragEnd = useCallback(async (result) => {
     const { destination, source, draggableId } = result || {};
+    // eslint-disable-next-line no-console
+    console.log("[DND] onDragEnd fired", { result });
     if (!destination || !source) return;
     if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+
+    // Log droppableIds known at drag time
+    // eslint-disable-next-line no-console
+    console.log("[DND] Available droppableIds at drag end:", availableDroppableIds);
+    if (!availableDroppableIds.includes(source.droppableId)) {
+      // eslint-disable-next-line no-console
+      console.warn("[DND] Source droppableId not found among available ids:", source.droppableId, availableDroppableIds);
+    }
+    if (!availableDroppableIds.includes(destination.droppableId)) {
+      // eslint-disable-next-line no-console
+      console.warn("[DND] Destination droppableId not found among available ids:", destination.droppableId, availableDroppableIds);
+    }
 
     const taskId = draggableId;
     const sourceList = Array.from(tasksByColumn[source.droppableId] || []);
@@ -82,9 +116,7 @@ export default function Board({ boardId, tasks = [], onLocalMove }) {
       // eslint-disable-next-line no-console
       console.error("Failed to move task:", e);
     }
-  }, [tasksByColumn, onLocalMove, tasks]);
-
-  const columnOrder = useMemo(() => columnOrderFromDefaults(), []);
+  }, [tasksByColumn, onLocalMove, tasks, availableDroppableIds]);
 
   // PUBLIC_INTERFACE
   const onEditTask = useCallback(async (updatedTask) => {
@@ -101,8 +133,17 @@ export default function Board({ boardId, tasks = [], onLocalMove }) {
 
   return (
     <div style={{ display: "flex", gap: 14, padding: 14, overflow: "auto" }}>
-      <DragDropContext onDragEnd={onDragEnd}>
-        {columnOrder.map((colId) => {
+      {/* Log that all columns are rendered before DragDropContext children to ensure registration */}
+      {/* eslint-disable-next-line no-console */}
+      {console.log("[Board] Rendering columns:", availableDroppableIds)}
+      <DragDropContext
+        onDragEnd={onDragEnd}
+        onDragStart={(start) => {
+          // eslint-disable-next-line no-console
+          console.log("[DND] onDragStart", { start, availableDroppableIds });
+        }}
+      >
+        {availableDroppableIds.map((colId) => {
           const column = defaultColumns.find(c => c.id === colId);
           const colTasks = tasksByColumn[colId] || [];
           return <Column key={colId} column={column} tasks={colTasks} onEditTask={onEditTask} />;

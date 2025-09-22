@@ -159,7 +159,17 @@ function App() {
             <div style={{ fontWeight: 800 }}>{(boards.find(b => b.id === activeBoardId)?.name) || "Board"}</div>
           </div>
           <div style={{ flex: 1, overflow: "auto", background: oceanTheme.gradient }}>
-            <Board boardId={activeBoardId} tasks={tasks} onLocalMove={onLocalMove} />
+            {/* Avoid rendering Board until we have a concrete activeBoardId to prevent transient unmounts */}
+            {activeBoardId ? (
+              <>
+                {console.log("[App] Rendering Board with activeBoardId:", activeBoardId, "taskCount:", tasks?.length || 0)}
+                <Board boardId={activeBoardId} tasks={tasks} onLocalMove={onLocalMove} />
+              </>
+            ) : (
+              <div style={{ padding: 16, color: oceanTheme.colors.mutedText }}>
+                Initializing board...
+              </div>
+            )}
           </div>
         </div>
       </main>

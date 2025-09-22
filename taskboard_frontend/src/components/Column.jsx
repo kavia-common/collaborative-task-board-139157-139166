@@ -14,7 +14,18 @@ import { DndPortal } from "./DndPortal";
  * - onEditTask: function(updatedTask)
  */
 export default function Column({ column, tasks = [], onEditTask }) {
-  const colId = String(column?.id || "");
+  const rawId = column?.id;
+  const colId = String(rawId ?? "").trim();
+
+  // Defensive: if id is invalid or empty, log a clear warning and disable droppable to prevent RBD invariant errors.
+  const invalidId = !colId;
+  if (invalidId) {
+    // eslint-disable-next-line no-console
+    console.warn("[Column] Invalid column id detected. Droppable will be disabled for this column.", { column });
+  } else {
+    // eslint-disable-next-line no-console
+    console.log("[Column] Rendering Droppable", { droppableId: colId, title: column?.title });
+  }
 
   return (
     <div style={{
@@ -29,8 +40,8 @@ export default function Column({ column, tasks = [], onEditTask }) {
       padding: 12,
     }}>
       <div style={{ fontWeight: 800, color: oceanTheme.colors.text }}>{column?.title || "Column"}</div>
-      {/* Ensure droppableId is a stable, non-empty string */}
-      <Droppable droppableId={colId}>
+      {/* Ensure droppableId is a stable, non-empty string; disable if invalid */}
+      <Droppable droppableId={colId || "invalid-droppable"} isDropDisabled={invalidId}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
